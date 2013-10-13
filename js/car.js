@@ -1,7 +1,5 @@
-var Car = ActiveRecord.create("Car", {}, {
-    url : ActiveRecord.config.endpoint + "cars.json"
-});
+var Car = ActiveRecord.create("Car");
 
 var Animal = ActiveRecord.create("Animal",{}, {
-    url : ActiveRecord.config.endpoint + "animals.json"
+    url : "/activerecord.js/data/animals.json"
 });

@@ -65,7 +65,7 @@ _crud.read = function (url, params) {
         url: url,
         method: 'GET',
         dataType: 'json',
-        params:params
+        data:params
     });
 };
 
@@ -73,7 +73,7 @@ _crud.read = function (url, params) {
 ////////////////////////////////////////// STATIC METHODS
 
 ActiveRecord.config = {
-    endpoint : "/activerecord.js/data/",
+    endpoint : "/activerecord.js/rest/",
     primaryKey : "id"
 };
 
@@ -90,7 +90,7 @@ ActiveRecord.config = {
 ActiveRecord.find = function () {
     var
         i, url, xhr,
-        params = [],
+        params = {},
         models = [],
         self = this,
         args = arguments;
@@ -117,23 +117,23 @@ ActiveRecord.find = function () {
  */
 ActiveRecord.create = function (modelName, protoConfig, staticConfig) {
     var i, option;
-    var Model = function () {
+    var Model = function (obj) {
         // Run the AR constructor (Setting default values)
         ActiveRecord.apply(this, arguments);
 
-        if (typeof protoConfig !== "object") { return; }
+        if (protoConfig && typeof protoConfig !== "object") { return; }
 
         for (option in protoConfig) {
             this[option] = protoConfig[option];
         }
         this.init();
-
         if (arguments.length === 1 && typeof arguments[0] === "object") {
             this.values = arguments[0];
             if (arguments[0][this.options.primaryKey]) {
                 this.isNew = false;
             }
         }
+        console.groupEnd("CONSTRUCTOR");
     };
     Model.prototype = new ActiveRecord();
     Model.prototype._super = ActiveRecord.prototype;
@@ -153,7 +153,7 @@ ActiveRecord.create = function (modelName, protoConfig, staticConfig) {
     Model.options.endpoint      = Model.options.endpoint || ActiveRecord.config.endpoint;
     Model.options.primaryKey    = Model.options.primaryKey || ActiveRecord.config.primaryKey;
 
-    Model.options.url           = Model.options.url || Model.options.endpoint + _plurilize(Model.options.modelName.toLowerCase()) + "/";
+    Model.options.url           = Model.options.url || Model.options.endpoint + _plurilize(Model.options.modelName.toLowerCase());
 
     if (!Model.options.columns || Model.options.columns.length === 0) {
         Model.options.columns = [];
