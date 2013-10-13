@@ -1,0 +1,21 @@
+[{
+    "id":"1",
+    "brand":"Seat",
+    "model":"Ibiza"
+},{
+    "id":"2",
+    "brand":"Seat",
+    "model":"Leon"
+},{
+    "id":"3",
+    "brand":"Renault",
+    "model":"Clio"
+},{
+    "id":"4",
+    "brand":"Ford",
+    "model":"Focus"
+},{
+    "id":"5",
+    "brand":"Alfa Romeo",
+    "model":"Mito"
+}]
