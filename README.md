@@ -106,3 +106,10 @@ Models will support relations, but the exact API is TBD. The relations that will
 - has one
 - has many
 - belongs to
+
+### Further ahead
+- caching and performance
+- AMD
+- remove jQuery
+- connect to anything
+- scaffolding tool
