@@ -13,7 +13,10 @@ There are a lot of active record libraries out there. However, none feels the sa
 or in PHP Frameworks like Yii (which makes some sense, because working on the client side with data is a whole different
 story).
 
-Lets see a few points that activerecord.js tries to cover.
+### Why this library?
+Of course, the first question is, why this library? Well, there is no reason. I just wanted to create a fun pet project
+for me and went ahead and created this lib. However, it does have a few points that differentiate from the others and
+can be appealing to you.
 
 #### Rapid development &amp; Dev friendly 
 This is the prime requirement for the library. The developer should worry as less as possible about configuration, setting up
