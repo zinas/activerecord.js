@@ -76,6 +76,8 @@ $app->post(
     '/cars',
     function () {
         // add a new car to the collection
+        $mdb = new MeekroDB();
+        $mdb->insert('cars', $_POST);
     }
 );
 

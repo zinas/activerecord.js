@@ -50,6 +50,35 @@ ActiveRecord.prototype._setup = function () {
     return this;
 }
 
+ActiveRecord.prototype.save = function () {
+    if (!this.isNew && !this.isDirty) {
+        return;
+    }
+
+    var xhr, self = this;
+    if (this.beforeSave === "function") {
+        this.beforeSave();
+    }
+
+    // TODO validate
+
+
+    if (this.isNew) {
+        xhr = _crud.create(this.options.url, this.values);
+        this.isNew = false;
+    }
+
+    if (this.afterSave === "function") {
+        xhr.done(function (response) {
+                this.afterSave();
+        });
+    }
+
+}
+
+ActiveRecord.prototype._create = function () {
+
+}
 
 ////////////////////////////////////////// CRUD SECTION
 var _crud = {};
@@ -68,6 +97,23 @@ _crud.read = function (url, params) {
         data:params
     });
 };
+
+/**
+ * POST an object to the server for creation
+ *
+ * @param  {[type]} url    [description]
+ * @param  {[type]} params [description]
+ * @return {[type]}        [description]
+ */
+_crud.create = function (url, params) {
+    params = params || {};
+    return $.ajax({
+        url: url,
+        method: 'POST',
+        dataType: 'json',
+        data:params
+    });
+}
 
 
 ////////////////////////////////////////// STATIC METHODS
@@ -117,7 +163,7 @@ ActiveRecord.find = function () {
  */
 ActiveRecord.create = function (modelName, protoConfig, staticConfig) {
     var i, option;
-    var Model = function (obj) {
+    var Model = function () {
         // Run the AR constructor (Setting default values)
         ActiveRecord.apply(this, arguments);
 
@@ -133,7 +179,6 @@ ActiveRecord.create = function (modelName, protoConfig, staticConfig) {
                 this.isNew = false;
             }
         }
-        console.groupEnd("CONSTRUCTOR");
     };
     Model.prototype = new ActiveRecord();
     Model.prototype._super = ActiveRecord.prototype;
