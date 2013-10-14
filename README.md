@@ -1,115 +1,39 @@
 activerecord.js
 ===============
 
-An ActiveRecord implementation for Javascript.
-
 > **Attention** this is under *heavy* development. Final structure and API are subject to change.
 
-## Intro
-The point of this implementation if to be as dev friendly as possible, both for defining the models and using them. 
-The principle of "convention over configuration" has been applied vastly. A lot of ideas are based on the Yii PHP Framework,
-with which I have sufficient experience.
+<em>For detailed documentation and examples about this project, please visit the <a href="https://github.com/zinas/activerecord.js/wiki">WIKI</a></em>
 
-## Goals
-Although there are no hard-defined requirements, activerecord.js aims for an easy to use API. Instead of requirements, here
-is a rough sketch of the API I aim for.
+activerecord.js is an <a href="http://en.wikipedia.org/wiki/Active_record_pattern" target="_blank">active record</a> 
+implementation for javascript. Quoting wikipedia:
+>Active record is an approach to accessing data in a database. A database table or view is wrapped into a class. Thus, an object instance is tied to a single row in the table. After creation of an object, a new row is added to the table upon save. Any object loaded gets its information from the database. When an object is updated the corresponding row in the table is also updated. The wrapper class implements accessor methods or properties for each column in the table or view.
 
-By default, everything will be based on a hypothetical REST API, but in the future, this should be customizable to attach to any kind of backend/API.
+There are a lot of active record libraries out there. However, none feels the same as using the equivelant in Rails,
+or in PHP Frameworks like Yii (which makes some sense, because working on the client side with data is a whole different
+story).
 
-### Model definition
-##### Simple Scenario
-```javascript
-var Car = ActiveRecord.create("Car");
-```
-This will automatically connect the Car model to a url of &lt;baseUrl&gt;/cars.
+Lets see a few points that activerecord.js tries to cover.
 
-##### Overriding "live" and "static" methods
-```javascript
-var Animal = ActiveRecord.create("Animal", {
-  save : function () {
-    // override the save() function of the live object
-  },
-  roar : function () {
-    // adds a new model functions
-  }
-}, {
-  url : "/apis/rest/zoo" // this will override the static property url
-})
-```
+#### Rapid development &amp; Dev friendly 
+This is the prime requirement for the library. The developer should worry as less as possible about configuration, setting up
+syntax etc. He should be able to just use Models and develop fast.
 
-### Adding a new record
-```javascript
-var car = new Car();
-car.brand = "Seat";
-car.model = "Ibiza";
-car.save();
+#### Convention over configuration
+You don't need to configure anything. The library makes the assumptions for you. Name your object "Car" and the REST endpoint
+will automatically be &lt;base-url&gt;/cars. Automatically your primary key will be a property named "id". And other little
+details to make your life easier
 
-// OR
+#### Extend everything
+Even though everything works by convention, you have the power to configure everything, based on your needs. The library
+doesn't hard enforce anything.
 
-var car = new Car();
-car.values = {
-   brand : "Seat",
-   model : "Ibiza"
-};
-car.save();
+#### Simple, versatile, human friendly API
+You don't need to remember <em>find</em>, <em>findByPK</em>, <em>findByAttribute</em> etc. There is only one <em>find</em>
+function and does intelligent guess based on attributes. Both <em>(new Car(5)).destroy()</em> and <em>Car.destroy(5)</em> 
+work. You don't need to remember a complex API, because just trying what comes natural usually works.
 
-// OR
-
-var car = new Car({
-   brand : "Seat",
-   model : "Ibiza"
-});
-car.save();
-```
-
-### Fetching records
-```javascript
-Car.find(5, function (car) {
-   // Gets the car with id 5
-   console.log(car.brand);
-});
-
-// OR
-
-Car.find('brand', 'Seat', function (cars) {
-   // cars will be an array of instantiated Car models
-});
-
-Car.find({
-   // Exact properties TBD
-   conditions : {brand:'Seat'},
-   limit : 10,
-   groupBy : 'year'
-}, function (cars) {
-   // cars will be an array of instantiated Car models
-});
-```
-
-### Updating and Deleting
-```javascript
-Car.find('brand', 'Seat', function (cars) {
-   var i;
-   for (i=0; i<cars.length; i++) {
-      if (car[i].year < '1995') { car.destroy(); }
-      if (car[i].model === 'Ibiza') {
-         car.price += 1000;
-         car.save();
-      }
-   }
-});
-```
-
-### Relations
-> Work in progress
-
-Models will support relations, but the exact API is TBD. The relations that will be supported are:
-- has one
-- has many
-- belongs to
-
-### Further ahead
-- caching and performance
-- AMD
-- remove jQuery
-- connect to anything
-- scaffolding tool
+### Quick Links
+- <a href="https://github.com/zinas/activerecord.js/wiki/API-Concept">API Concept</a> to take a look on how this library will be used.
+- <a href="https://github.com/zinas/activerecord.js/wiki/Simple-REST-API">REST API</a> documentation to understand how the dummy REST API that is included in the project works.
+- <a href="https://github.com/zinas/activerecord.js/wiki/Backlog">Backlog</a> to get a feeling on where this library is heading to.
