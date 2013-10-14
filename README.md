@@ -1,10 +1,13 @@
-activerecord.js
-===============
-
 > **Attention** this is under *heavy* development. Final structure and API are subject to change.
 
 <em>For detailed documentation and examples about this project, please visit the <a href="https://github.com/zinas/activerecord.js/wiki">WIKI</a></em>
+###### Quick Links
+- <a href="https://github.com/zinas/activerecord.js/wiki/API-Concept">API Concept</a> to take a look on how this library will be used.
+- <a href="https://github.com/zinas/activerecord.js/wiki/Simple-REST-API">REST API</a> documentation to understand how the dummy REST API that is included in the project works.
+- <a href="https://github.com/zinas/activerecord.js/wiki/Backlog">Backlog</a> to get a feeling on where this library is heading to.
 
+activerecord.js
+===============
 activerecord.js is an <a href="http://en.wikipedia.org/wiki/Active_record_pattern" target="_blank">active record</a> 
 implementation for javascript. Quoting wikipedia:
 >Active record is an approach to accessing data in a database. A database table or view is wrapped into a class. Thus, an object instance is tied to a single row in the table. After creation of an object, a new row is added to the table upon save. Any object loaded gets its information from the database. When an object is updated the corresponding row in the table is also updated. The wrapper class implements accessor methods or properties for each column in the table or view.
@@ -35,8 +38,3 @@ doesn't hard enforce anything.
 You don't need to remember <em>find</em>, <em>findByPK</em>, <em>findByAttribute</em> etc. There is only one <em>find</em>
 function and does intelligent guess based on attributes. Both <em>(new Car(5)).destroy()</em> and <em>Car.destroy(5)</em> 
 work. You don't need to remember a complex API, because just trying what comes natural usually works.
-
-### Quick Links
-- <a href="https://github.com/zinas/activerecord.js/wiki/API-Concept">API Concept</a> to take a look on how this library will be used.
-- <a href="https://github.com/zinas/activerecord.js/wiki/Simple-REST-API">REST API</a> documentation to understand how the dummy REST API that is included in the project works.
-- <a href="https://github.com/zinas/activerecord.js/wiki/Backlog">Backlog</a> to get a feeling on where this library is heading to.
