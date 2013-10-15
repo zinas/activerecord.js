@@ -80,12 +80,24 @@ $app->post(
         $mdb->insert('cars', $_POST);
     }
 );
+$_PUT = $app->request->params();
 
 // PUT route
 $app->put(
     '/cars/:id',
-    function ($id) {
-        // update the car in the collection
+    function ($id) use ($_PUT) {
+        $columns = array('id', 'brand', 'model', 'year', 'cost');
+        // Get a list of cars
+        $mdb = new MeekroDB();
+        $params = array();
+        foreach ($columns as $column) {
+            if ($_PUT[$column]) {
+                $params[] = "`".$column."` = '".$_PUT[$column]."'";
+            }
+        }
+
+        $query = "UPDATE cars SET ".implode(',', $params)." WHERE id=".$id;
+        echo json_encode($mdb->query($query));
     }
 );
 

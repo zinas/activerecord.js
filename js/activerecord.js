@@ -1,4 +1,4 @@
-(function (global, $) {
+var crud = rest2crud;
 
 /**
  * Base constructor for the ActiveRecord
@@ -62,11 +62,19 @@ ActiveRecord.prototype.save = function () {
 
     // TODO validate
 
-
     if (this.isNew) {
-        xhr = _crud.create(this.options.url, this.values);
-        this.isNew = false;
+        xhr = crud.create(this.options.url, this.values);
+    } else if (this.isDirty) {
+        console.group("isDirty");
+            console.log("url", this.options.url);
+            console.log("values", this.values);
+            console.log("PK", this.options.primaryKey, this.values[this.options.primaryKey]);
+        console.groupEnd("isDirty");
+        xhr = crud.update(this.options.url+"/"+this.values[this.options.primaryKey], this.values);
     }
+
+    this.isNew = false;
+    this.isDirty = false;
 
     if (this.afterSave === "function") {
         xhr.done(function (response) {
@@ -74,45 +82,7 @@ ActiveRecord.prototype.save = function () {
         });
     }
 
-}
-
-ActiveRecord.prototype._create = function () {
-
-}
-
-////////////////////////////////////////// CRUD SECTION
-var _crud = {};
-
-/**
- * Request some data from the server
- *
- * @return {xhr} XHR object, so that you can attach callbacks
- */
-_crud.read = function (url, params) {
-    params = params || {};
-    return $.ajax({
-        url: url,
-        method: 'GET',
-        dataType: 'json',
-        data:params
-    });
-};
-
-/**
- * POST an object to the server for creation
- *
- * @param  {[type]} url    [description]
- * @param  {[type]} params [description]
- * @return {[type]}        [description]
- */
-_crud.create = function (url, params) {
-    params = params || {};
-    return $.ajax({
-        url: url,
-        method: 'POST',
-        dataType: 'json',
-        data:params
-    });
+    return xhr;
 }
 
 
@@ -145,7 +115,7 @@ ActiveRecord.find = function () {
         params[args[0]] = args[1];
     }
 
-    xhr = _crud.read(url, params);
+    xhr = crud.read(url, params);
     xhr.done(function (records) {
         for(i in records) {
             models.push(new self(records[i]));
@@ -202,7 +172,7 @@ ActiveRecord.create = function (modelName, protoConfig, staticConfig) {
 
     if (!Model.options.columns || Model.options.columns.length === 0) {
         Model.options.columns = [];
-        _crud.read(Model.options.url).done(function (records) {
+        crud.read(Model.options.url).done(function (records) {
             for (i in records[0]) {
                 Model.options.columns.push(i);
             }
@@ -228,6 +198,3 @@ ActiveRecord.create = function (modelName, protoConfig, staticConfig) {
 function _plurilize(str) {
     return str+"s";
 }
-
-global.ActiveRecord = ActiveRecord;
-})(window, jQuery);
