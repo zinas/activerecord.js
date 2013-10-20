@@ -65,11 +65,6 @@ ActiveRecord.prototype.save = function () {
     if (this.isNew) {
         xhr = crud.create(this.options.url, this.values);
     } else if (this.isDirty) {
-        console.group("isDirty");
-            console.log("url", this.options.url);
-            console.log("values", this.values);
-            console.log("PK", this.options.primaryKey, this.values[this.options.primaryKey]);
-        console.groupEnd("isDirty");
         xhr = crud.update(this.options.url+"/"+this.values[this.options.primaryKey], this.values);
     }
 
@@ -86,7 +81,7 @@ ActiveRecord.prototype.save = function () {
 }
 
 
-////////////////////////////////////////// STATIC METHODS
+////////////////////////////////////////// STATIC METHODS & PROPERTIES
 
 ActiveRecord.config = {
     endpoint : "/activerecord.js/rest/",
@@ -100,31 +95,43 @@ ActiveRecord.config = {
  *
  * - object, callback
  * - value, callback
- * - column, value, callback
+ * - attribute, value, callback
  * @return {xhr}
  */
 ActiveRecord.find = function () {
-    var
-        i, url, xhr,
-        params = {},
-        models = [],
-        self = this,
-        args = arguments;
-    if (args.length === 3) {
-        url = this.options.url;
-        params[args[0]] = args[1];
+    var xhr;
+
+    if (arguments.length === 2 && typeof arguments[0] !== "object") {
+        xhr = this.__findById(arguments[0], arguments[1]);
+    } else if (arguments.length === 3) {
+        xhr = this.__findByAttribute(arguments[0], arguments[1], arguments[2]);
     }
 
-    xhr = crud.read(url, params);
+
+    return xhr;
+}
+
+ActiveRecord.__findById = function (id, callback) {
+    var xhr = crud.read(this.options.url+'/'+id), self = this;
+    xhr.done(function (records) {
+       _exec(callback, new self(records[0]));
+    });
+    return xhr;
+}
+ActiveRecord.__findByAttribute = function (attributeName, value, callback) {
+    var xhr, params = {}, models = [], self = this, i;
+    params[attributeName] = value;
+    xhr = crud.read(this.options.url, params);
     xhr.done(function (records) {
         for(i in records) {
             models.push(new self(records[i]));
         }
 
-        args[2](models);
-    })
-}
+        _exec(callback, models);
+    });
 
+    return xhr;
+}
 /**
  * Base method for creating new models definition and
  * extending the base ActiveRecord
@@ -181,6 +188,8 @@ ActiveRecord.create = function (modelName, protoConfig, staticConfig) {
 
     Model.prototype.options = Model.options;
     Model.find = ActiveRecord.find;
+    Model.__findById = ActiveRecord.__findById;
+    Model.__findByAttribute = ActiveRecord.__findByAttribute;
     return Model;
 };
 
@@ -197,4 +206,15 @@ ActiveRecord.create = function (modelName, protoConfig, staticConfig) {
  */
 function _plurilize(str) {
     return str+"s";
+}
+
+function _exec() {
+    var func, args = Array.prototype.slice.call(arguments);
+    if (typeof args[0] === "function") {
+        func = args[0];
+        args.splice(0,1);
+        return func.apply(this, args);
+    } else {
+        return null;
+    }
 }
