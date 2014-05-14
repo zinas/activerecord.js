@@ -7,7 +7,7 @@ var crud = rest2crud;
  * Initialization should happen in init()
  */
 function ActiveRecord() {
-    this.values             = {};
+    this.values             = {}; // this will hold the values of the instanced AR
     this.isNew              = true; // Whether it is a new record, or an existing one
     this.isDirty            = false; // Whether the values have changed since the last save
 }
@@ -15,10 +15,10 @@ function ActiveRecord() {
 /**
  * Initialization function
  *
- * @return {promise}
+ * @return {Model}
  */
 ActiveRecord.prototype.init = function () {
-    this._setup();
+    return this._setup();
 }
 
 /**
@@ -39,21 +39,32 @@ ActiveRecord.prototype._setup = function () {
     return this;
 }
 
-ActiveRecord.prototype.defineGetterSetter = function (column) {
-    this.__defineGetter__(column, function () {
-        return this.values[column];
+/**
+ * Registers the getter and setter for a given column name
+ *
+ * @param  {String} prop A property in the active record
+ * @return null
+ */
+ActiveRecord.prototype.defineGetterSetter = function (prop) {
+    this.__defineGetter__(prop, function () {
+        return this.values[prop];
     });
-    this.__defineSetter__(column, function (value) {
-        if (this.values[column] !== value) {
+    this.__defineSetter__(prop, function (value) {
+        if (this.values[prop] !== value) {
             this.isDirty = true;
         }
-        this.values[column] = value;
+        this.values[prop] = value;
     });
 }
 
+/**
+ * Saves the current instance.
+ *
+ * @return {Promise}
+ */
 ActiveRecord.prototype.save = function () {
     if (!this.isNew && !this.isDirty) {
-        return;
+        console.warn("You are trying to save() but there are no modifications in the values");
     }
 
     var xhr, self = this;
@@ -72,11 +83,7 @@ ActiveRecord.prototype.save = function () {
     this.isNew = false;
     this.isDirty = false;
 
-    if (this.afterSave === "function") {
-        xhr.done(function (response) {
-                this.afterSave();
-        });
-    }
+    // we don't need an after save event. The developer can simple do: AR.save().done()
 
     return xhr;
 }
@@ -84,8 +91,16 @@ ActiveRecord.prototype.save = function () {
 
 ////////////////////////////////////////// STATIC METHODS & PROPERTIES
 
+/**
+ * Object to hold all the public static methods
+ * @type {Object}
+ */
 ActiveRecord.functions = {};
 
+/**
+ * "constants" that act as defaults
+ * @type {Object}
+ */
 ActiveRecord.defaults = {
     ENDPOINT : "/activerecord.js/rest/",
     PRIMARY_KEY : "id"
@@ -97,7 +112,7 @@ ActiveRecord.defaults = {
  * Possible arguments:
  *
  * - object
- * - value
+ * - value (just providing a value, assumes the PK)
  * - attribute, value
  * @return {xhr}
  */
@@ -105,9 +120,9 @@ ActiveRecord.functions.find = function () {
     var xhr;
 
     if (arguments.length === 1 && typeof arguments[0] !== "object") {
-        xhr = this.__findById(arguments[0]);
+        xhr = this.functions.__findById(arguments[0]);
     } else if (arguments.length === 2) {
-        xhr = this.__findByAttribute(arguments[0], arguments[1]);
+        xhr = this.functions.__findByAttribute(arguments[0], arguments[1]);
     } else if (arguments.length === 1 && typeof arguments[0] === "object") {
         // TODO pass parameters as an object
     } else {
@@ -117,14 +132,26 @@ ActiveRecord.functions.find = function () {
     return xhr;
 }
 
-ActiveRecord.functions.__findById = function (id) {
+/**
+ * Private function for searching by id
+ * @param  {mixed} id the primary key value
+ * @return {Promise} A promise with the AR passed as param
+ */
+ActiveRecord.__findById = function (id) {
     var xhr = crud.read(this.config.url+'/'+id), self = this;
     return xhr.then(function (records) {
         return new self(records[0]);
     });
 }
 
-ActiveRecord.functions.__findByAttribute = function (attributeName, value) {
+/**
+ * Private function for search by attribute
+ *
+ * @param  {String} attributeName The name of the attribute to search by
+ * @param  {mixed} value         The value to search for
+ * @return {Promise}
+ */
+ActiveRecord.__findByAttribute = function (attributeName, value) {
     var xhr, params = {}, self = this, i;
     params[attributeName] = value;
     xhr = crud.read(this.config.url, params);
@@ -140,6 +167,15 @@ ActiveRecord.functions.__findByAttribute = function (attributeName, value) {
     });
 }
 
+/**
+ * Static method for updating
+ *
+ * Possible params
+ * - value + object = PK to update + new values
+ * - value + value + value = PK to update + attribute to change + new value
+ *
+ * @return {[type]} [description]
+ */
 ActiveRecord.functions.update = function () {
     var params = {};
     if (arguments.length === 2 && typeof arguments[0] !== "object") {
@@ -152,6 +188,13 @@ ActiveRecord.functions.update = function () {
     }
 }
 
+/**
+ * Method for extending the base AR functionality. Everything you extend with this function,
+ * affects the "live" object and not the static one
+ *
+ * @param  {Object} proto methods and properties to extend with
+ * @return {Model}        the AR itself
+ */
 ActiveRecord.functions.extend = function (proto) {
     var i, option;
     for (option in proto) {
@@ -170,6 +213,10 @@ ActiveRecord.functions.extend = function (proto) {
 ActiveRecord.register = function (modelName, config) {
     var option, i;
 
+    /**
+     * The basic concept is: we use the ActiveRecord object as our infrastructure and then
+     * we create the Model object based on that
+     */
     var Model = function () {
         // Run the AR constructor (Setting default values)
         ActiveRecord.apply(this, arguments);
