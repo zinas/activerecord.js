@@ -91,7 +91,7 @@ $app->put(
         $mdb = new MeekroDB();
         $params = array();
         foreach ($columns as $column) {
-            if ($_PUT[$column]) {
+            if (isset($_PUT[$column])) {
                 $params[] = "`".$column."` = '".$_PUT[$column]."'";
             }
         }

@@ -110,6 +110,8 @@ ActiveRecord.functions.find = function () {
         xhr = this.__findByAttribute(arguments[0], arguments[1]);
     } else if (arguments.length === 1 && typeof arguments[0] === "object") {
         // TODO pass parameters as an object
+    } else {
+        throw "Wrong number of parameters in find() function";
     }
 
     return xhr;
@@ -136,6 +138,18 @@ ActiveRecord.functions.__findByAttribute = function (attributeName, value) {
 
        return models;
     });
+}
+
+ActiveRecord.functions.update = function () {
+    var params = {};
+    if (arguments.length === 2 && typeof arguments[0] !== "object") {
+        return crud.update(this.config.url+"/"+arguments[0], arguments[1]);
+    } else if (arguments.length === 3 && typeof arguments[0] !== "object") {
+        params[arguments[1]] = arguments[2];
+        return crud.update(this.config.url+"/"+arguments[0], params);
+    } else {
+        throw "Wrong number of parameters in update() function";
+    }
 }
 
 ActiveRecord.functions.extend = function (proto) {
