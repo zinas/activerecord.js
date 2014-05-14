@@ -32,8 +32,8 @@ ActiveRecord.prototype._setup = function () {
     var i;
 
     // Define getters and setters for each attribute
-    for (i in this.options.columns) {
-        this.defineGetterSetter(this.options.columns[i]);
+    for (i in this.config.columns) {
+        this.defineGetterSetter(this.config.columns[i]);
     }
 
     return this;
@@ -64,9 +64,9 @@ ActiveRecord.prototype.save = function () {
     // TODO validate
 
     if (this.isNew) {
-        xhr = crud.create(this.options.url, this.values);
+        xhr = crud.create(this.config.url, this.values);
     } else if (this.isDirty) {
-        xhr = crud.update(this.options.url+"/"+this.values[this.options.primaryKey], this.values);
+        xhr = crud.update(this.config.url+"/"+this.values[this.config.primaryKey], this.values);
     }
 
     this.isNew = false;
@@ -84,9 +84,11 @@ ActiveRecord.prototype.save = function () {
 
 ////////////////////////////////////////// STATIC METHODS & PROPERTIES
 
-ActiveRecord.config = {
-    endpoint : "/activerecord.js/rest/",
-    primaryKey : "id"
+ActiveRecord.functions = {};
+
+ActiveRecord.defaults = {
+    ENDPOINT : "/activerecord.js/rest/",
+    PRIMARY_KEY : "id"
 };
 
 /**
@@ -99,7 +101,7 @@ ActiveRecord.config = {
  * - attribute, value
  * @return {xhr}
  */
-ActiveRecord.find = function () {
+ActiveRecord.functions.find = function () {
     var xhr;
 
     if (arguments.length === 1 && typeof arguments[0] !== "object") {
@@ -110,21 +112,20 @@ ActiveRecord.find = function () {
         // TODO pass parameters as an object
     }
 
-
     return xhr;
 }
 
-ActiveRecord.__findById = function (id) {
-    var xhr = crud.read(this.options.url+'/'+id), self = this;
+ActiveRecord.functions.__findById = function (id) {
+    var xhr = crud.read(this.config.url+'/'+id), self = this;
     return xhr.then(function (records) {
         return new self(records[0]);
     });
 }
 
-ActiveRecord.__findByAttribute = function (attributeName, value) {
+ActiveRecord.functions.__findByAttribute = function (attributeName, value) {
     var xhr, params = {}, self = this, i;
     params[attributeName] = value;
-    xhr = crud.read(this.options.url, params);
+    xhr = crud.read(this.config.url, params);
 
     return xhr.then(function (records) {
         var models = [];
@@ -137,66 +138,72 @@ ActiveRecord.__findByAttribute = function (attributeName, value) {
     });
 }
 
+ActiveRecord.functions.extend = function (proto) {
+    var i, option;
+    for (option in proto) {
+        this.prototype[option] = proto[option];
+    }
+
+    return this;
+};
+
 /**
  * Base method for creating new models definition and
  * extending the base ActiveRecord
  *
  * @return {ActiveRecord} the extended model
  */
-ActiveRecord.register = function (modelName, protoConfig, staticConfig) {
-    var i, option;
+ActiveRecord.register = function (modelName, config) {
+    var option, i;
+
     var Model = function () {
         // Run the AR constructor (Setting default values)
         ActiveRecord.apply(this, arguments);
 
-        if (protoConfig && typeof protoConfig !== "object") { return; }
-
-        for (option in protoConfig) {
-            this[option] = protoConfig[option];
-        }
         this.init();
         if (arguments.length === 1 && typeof arguments[0] === "object") {
             this.values = arguments[0];
-            if (arguments[0][this.options.primaryKey]) {
+            if (arguments[0][this.config.primaryKey]) {
                 this.isNew = false;
             }
         }
     };
-    Model.prototype = new ActiveRecord();
-    Model.prototype._super = ActiveRecord.prototype;
 
-    Model.options = {};
+    Model.config = {};
 
     // First set the user overriden properties
-    if (typeof staticConfig === "object") {
-        for (option in staticConfig) {
-            Model.options[option] = staticConfig[option];
+    if (typeof config === "object") {
+        for (option in config) {
+            Model.config[option] = config[option];
         }
     }
 
     // For all missing properties apply defaults or calculate
-    Model.options.modelName     = modelName;
+    Model.config.modelName     = modelName;
+    Model.config.endpoint      = Model.config.endpoint || ActiveRecord.defaults.ENDPOINT;
+    Model.config.primaryKey    = Model.config.primaryKey || ActiveRecord.defaults.PRIMARY_KEY;
+    Model.config.url           = Model.config.url || Model.config.endpoint + _plurilize(Model.config.modelName.toLowerCase());
 
-    Model.options.endpoint      = Model.options.endpoint || ActiveRecord.config.endpoint;
-    Model.options.primaryKey    = Model.options.primaryKey || ActiveRecord.config.primaryKey;
-
-    Model.options.url           = Model.options.url || Model.options.endpoint + _plurilize(Model.options.modelName.toLowerCase());
-
-    if (!Model.options.columns || Model.options.columns.length === 0) {
-        Model.options.columns = [];
-        crud.read(Model.options.url).done(function (records) {
+    if (!Model.config.columns || Model.config.columns.length === 0) {
+        Model.config.columns = [];
+        crud.read(Model.config.url).done(function (records) {
             for (i in records[0]) {
-                Model.options.columns.push(i);
+                Model.config.columns.push(i);
             }
         });
     }
 
-    Model.prototype.options = Model.options;
-    Model.find = ActiveRecord.find;
-    Model.__findById = ActiveRecord.__findById;
-    Model.__findByAttribute = ActiveRecord.__findByAttribute;
+    for (i in ActiveRecord.functions) {
+        Model[i] = ActiveRecord.functions[i];
+    }
+
+    Model.prototype = new ActiveRecord();
+    Model.prototype._super = ActiveRecord.prototype;
+    Model.prototype.config = Model.config;
+
     return Model;
 };
+
 
 
 ////////////////////////////////////////// PRIVATE UTILITIES
