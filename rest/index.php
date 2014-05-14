@@ -48,12 +48,12 @@ $app->get(
         $query = "SELECT * FROM cars WHERE 1 ";
 
         foreach ($columns as $column) {
-            if ($_GET[$column]) {
+            if (isset($_GET[$column])) {
                 $query .= " AND `".$column."` = '".$_GET[$column]."' ";
             }
         }
 
-        if ($_GET['limit']) {
+        if (isset($_GET['limit'])) {
             $query .= " LIMIT ".$_GET['limit']." ";
         }
 

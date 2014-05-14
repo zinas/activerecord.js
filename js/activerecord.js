@@ -29,25 +29,26 @@ ActiveRecord.prototype.init = function () {
  * @return {Model}
  */
 ActiveRecord.prototype._setup = function () {
-    var i, self = this, col;
+    var i;
 
+    // Define getters and setters for each attribute
     for (i in this.options.columns) {
-        (function (column) {
-
-            // Define getters and setters for each attribute
-            self.__defineGetter__(column, function () {
-                return self.values[column];
-            });
-            self.__defineSetter__(column, function (value) {
-                if (self.values[column] !== value) {
-                    self.isDirty = true;
-                }
-                self.values[column] = value;
-            });
-        })(this.options.columns[i]);
+        this.defineGetterSetter(this.options.columns[i]);
     }
 
     return this;
+}
+
+ActiveRecord.prototype.defineGetterSetter = function (column) {
+    this.__defineGetter__(column, function () {
+        return this.values[column];
+    });
+    this.__defineSetter__(column, function (value) {
+        if (this.values[column] !== value) {
+            this.isDirty = true;
+        }
+        this.values[column] = value;
+    });
 }
 
 ActiveRecord.prototype.save = function () {
@@ -93,52 +94,56 @@ ActiveRecord.config = {
  *
  * Possible arguments:
  *
- * - object, callback
- * - value, callback
- * - attribute, value, callback
+ * - object
+ * - value
+ * - attribute, value
  * @return {xhr}
  */
 ActiveRecord.find = function () {
     var xhr;
 
-    if (arguments.length === 2 && typeof arguments[0] !== "object") {
-        xhr = this.__findById(arguments[0], arguments[1]);
-    } else if (arguments.length === 3) {
-        xhr = this.__findByAttribute(arguments[0], arguments[1], arguments[2]);
+    if (arguments.length === 1 && typeof arguments[0] !== "object") {
+        xhr = this.__findById(arguments[0]);
+    } else if (arguments.length === 2) {
+        xhr = this.__findByAttribute(arguments[0], arguments[1]);
+    } else if (arguments.length === 1 && typeof arguments[0] === "object") {
+        // TODO pass parameters as an object
     }
 
 
     return xhr;
 }
 
-ActiveRecord.__findById = function (id, callback) {
+ActiveRecord.__findById = function (id) {
     var xhr = crud.read(this.options.url+'/'+id), self = this;
-    xhr.done(function (records) {
-       _exec(callback, new self(records[0]));
+    return xhr.then(function (records) {
+        return new self(records[0]);
     });
-    return xhr;
 }
-ActiveRecord.__findByAttribute = function (attributeName, value, callback) {
-    var xhr, params = {}, models = [], self = this, i;
+
+ActiveRecord.__findByAttribute = function (attributeName, value) {
+    var xhr, params = {}, self = this, i;
     params[attributeName] = value;
     xhr = crud.read(this.options.url, params);
-    xhr.done(function (records) {
+
+    return xhr.then(function (records) {
+        var models = [];
+
         for(i in records) {
             models.push(new self(records[i]));
         }
 
-        _exec(callback, models);
+       return models;
     });
-
-    return xhr;
 }
+
 /**
  * Base method for creating new models definition and
  * extending the base ActiveRecord
  *
  * @return {ActiveRecord} the extended model
  */
-ActiveRecord.create = function (modelName, protoConfig, staticConfig) {
+ActiveRecord.register = function (modelName, protoConfig, staticConfig) {
     var i, option;
     var Model = function () {
         // Run the AR constructor (Setting default values)
@@ -206,15 +211,4 @@ ActiveRecord.create = function (modelName, protoConfig, staticConfig) {
  */
 function _plurilize(str) {
     return str+"s";
-}
-
-function _exec() {
-    var func, args = Array.prototype.slice.call(arguments);
-    if (typeof args[0] === "function") {
-        func = args[0];
-        args.splice(0,1);
-        return func.apply(this, args);
-    } else {
-        return null;
-    }
 }
