@@ -103,9 +103,11 @@ $app->put(
 
 // DELETE route
 $app->delete(
-    '/delete/:id',
+    '/cars/:id',
     function ($id) {
-        // remove a car from the collection
+        $query = 'DELETE FROM cars WHERE id='.$id;
+        $mdb = new MeekroDB();
+        echo json_encode($mdb->query($query));
     }
 );
 

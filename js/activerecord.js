@@ -88,6 +88,24 @@ ActiveRecord.prototype.save = function () {
     return xhr;
 }
 
+/**
+ * Deletes a record
+ *
+ * @return {Promise}
+ */
+ActiveRecord.prototype.remove = function () {
+    if (!this.values[this.config.primaryKey]) {
+        throw "you are trying to delete and non-instanced object";
+    }
+
+    var xhr, self = this;
+    if (this.beforeRemove === "function") {
+        this.beforeRemove();
+    }
+
+    return crud.delete(this.config.url+"/"+this.values[this.config.primaryKey]);
+}
+
 
 ////////////////////////////////////////// STATIC METHODS & PROPERTIES
 
@@ -120,9 +138,9 @@ ActiveRecord.functions.find = function () {
     var xhr;
 
     if (arguments.length === 1 && typeof arguments[0] !== "object") {
-        xhr = this.functions.__findById(arguments[0]);
+        xhr = this.__findById(arguments[0]);
     } else if (arguments.length === 2) {
-        xhr = this.functions.__findByAttribute(arguments[0], arguments[1]);
+        xhr = this.__findByAttribute(arguments[0], arguments[1]);
     } else if (arguments.length === 1 && typeof arguments[0] === "object") {
         // TODO pass parameters as an object
     } else {
@@ -137,7 +155,7 @@ ActiveRecord.functions.find = function () {
  * @param  {mixed} id the primary key value
  * @return {Promise} A promise with the AR passed as param
  */
-ActiveRecord.__findById = function (id) {
+ActiveRecord.functions.__findById = function (id) {
     var xhr = crud.read(this.config.url+'/'+id), self = this;
     return xhr.then(function (records) {
         return new self(records[0]);
@@ -151,7 +169,7 @@ ActiveRecord.__findById = function (id) {
  * @param  {mixed} value         The value to search for
  * @return {Promise}
  */
-ActiveRecord.__findByAttribute = function (attributeName, value) {
+ActiveRecord.functions.__findByAttribute = function (attributeName, value) {
     var xhr, params = {}, self = this, i;
     params[attributeName] = value;
     xhr = crud.read(this.config.url, params);
@@ -174,7 +192,7 @@ ActiveRecord.__findByAttribute = function (attributeName, value) {
  * - value + object = PK to update + new values
  * - value + value + value = PK to update + attribute to change + new value
  *
- * @return {[type]} [description]
+ * @return {Promise}
  */
 ActiveRecord.functions.update = function () {
     var params = {};
@@ -185,6 +203,26 @@ ActiveRecord.functions.update = function () {
         return crud.update(this.config.url+"/"+arguments[0], params);
     } else {
         throw "Wrong number of parameters in update() function";
+    }
+}
+
+/**
+ * Static method for deleting
+ *
+ * Possible params
+ * - value = PK to update
+ *
+ * TODO:
+ * - attribute + value = delete by attribute
+ *
+ * @return {Promise}
+ */
+ActiveRecord.functions.remove = function () {
+    var params = {};
+    if (arguments.length === 1 && typeof arguments[0] !== "object") {
+        return crud.delete(this.config.url+"/"+arguments[0]);
+    } else {
+        throw "Wrong number of parameters in remove() function";
     }
 }
 
