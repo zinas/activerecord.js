@@ -12,6 +12,8 @@ function ActiveRecord() {
     this.isDirty            = false; // Whether the values have changed since the last save
 }
 
+ActiveRecord.prototype.validations = {};
+
 /**
  * Initialization function
  *
@@ -72,7 +74,9 @@ ActiveRecord.prototype.save = function () {
         this.beforeSave();
     }
 
-    // TODO validate
+    if (!this.validate()) {
+      throw "Validations failed";
+    }
 
     if (this.isNew) {
         xhr = crud.create(this.config.url, this.values);
@@ -87,6 +91,39 @@ ActiveRecord.prototype.save = function () {
 
     return xhr;
 }
+
+ActiveRecord.prototype.validate = function () {
+  var property, validation, i, vFun, results = {}, self = this;
+
+  for (property in this.validations) {
+    results[property] = this.validations[property].map(function (validation) {
+      self.checkValidation(property, validation);
+    });
+  }
+
+  return true;
+}
+
+ActiveRecord.prototype.checkValidation = function (property, validation) {
+  var func, params = [this.values[property]];
+
+  if (typeof validation === "object") {
+    func = validation.name;
+    params = params.concat(validation.params);
+  } else if (typeof validation === "string") {
+    func = validation;
+  } else {
+    throw "Unknown type of validation: '"+func+"'";
+  }
+
+  if (typeof Validator[func] === "function") {
+    return Validator[func].apply(this, params);
+  } else {
+    console.warn("No validation '"+func+"' defined");
+  }
+}
+
+
 
 /**
  * Deletes a record
@@ -227,22 +264,6 @@ ActiveRecord.functions.remove = function () {
 }
 
 /**
- * Method for extending the base AR functionality. Everything you extend with this function,
- * affects the "live" object and not the static one
- *
- * @param  {Object} proto methods and properties to extend with
- * @return {Model}        the AR itself
- */
-ActiveRecord.functions.extend = function (proto) {
-    var i, option;
-    for (option in proto) {
-        this.prototype[option] = proto[option];
-    }
-
-    return this;
-};
-
-/**
  * Base method for creating new models definition and
  * extending the base ActiveRecord
  *
@@ -257,7 +278,7 @@ ActiveRecord.register = function (modelName, config) {
      */
     var Model = function () {
         // Run the AR constructor (Setting default values)
-        ActiveRecord.apply(this, arguments);
+        //ActiveRecord.apply(this, arguments);
 
         this.init();
         if (arguments.length === 1 && typeof arguments[0] === "object") {
@@ -299,6 +320,18 @@ ActiveRecord.register = function (modelName, config) {
     Model.prototype = new ActiveRecord();
     Model.prototype._super = ActiveRecord.prototype;
     Model.prototype.config = Model.config;
+
+    Model.extend = function (proto) {
+        var i, option;
+
+        Model.prototype.foo = function () {};
+
+        for (option in proto) {
+            Model.prototype[option] = proto[option];
+        }
+
+        return this;
+    };
 
     return Model;
 };

@@ -1,5 +1,15 @@
 var Car = ActiveRecord.register("Car");
 
-// var Animal = ActiveRecord.create("Animal",{}, {
+Car.extend({
+  validations : {
+    brand : ['required'],
+    cost : [{
+      name : "more",
+      params : [10000]
+    }, 'number']
+  }
+});
+
+// var Animal = ActiveRecord.register("Animal",{}, {
 //     url : "/activerecord.js/data/animals.json"
 // });
