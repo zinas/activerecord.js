@@ -97,33 +97,37 @@ ActiveRecord.prototype.validate = function () {
 
   for (property in this.validations) {
     results[property] = this.validations[property].map(function (validation) {
-      self.checkValidation(property, validation);
+      return self.checkValidation(property, validation);
     });
   }
+
+  console.log(results);
 
   return true;
 }
 
 ActiveRecord.prototype.checkValidation = function (property, validation) {
-  var func, params = [this.values[property]];
+  var func, params = [], obj = {};
 
   if (typeof validation === "object") {
     func = validation.name;
-    params = params.concat(validation.params);
   } else if (typeof validation === "string") {
     func = validation;
   } else {
     throw "Unknown type of validation: '"+func+"'";
   }
 
-  if (typeof Validator[func] === "function") {
-    return Validator[func].apply(this, params);
+  if (typeof Validator.functions[func] === "function") {
+    obj.valid = Validator.functions[func].apply(this, params.concat(this.values[property], validation.params));
+    if (obj.valid === false) {
+      obj.message = Validator.messages[func].apply(this, params.concat(property, validation.params));
+    }
+
+    return obj;
   } else {
     console.warn("No validation '"+func+"' defined");
   }
 }
-
-
 
 /**
  * Deletes a record
