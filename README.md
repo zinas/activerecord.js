@@ -4,7 +4,7 @@
 ###### Quick Links
 - <a href="https://github.com/zinas/activerecord.js/wiki/API-Concept">API Concept</a> to take a look on how this library will be used.
 - <a href="https://github.com/zinas/activerecord.js/wiki/Simple-REST-API">REST API</a> documentation to understand how the dummy REST API that is included in the project works.
-- <a href="https://github.com/zinas/activerecord.js/wiki/Backlog">Backlog</a> to get a feeling on where this library is heading to.
+- <a href="https://github.com/zinas/activerecord.js/issues">Issues</a> to get a feeling on where this library is heading to.
 
 activerecord.js
 ===============
