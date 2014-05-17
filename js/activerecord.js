@@ -10,9 +10,12 @@ function ActiveRecord() {
     this.values             = {}; // this will hold the values of the instanced AR
     this.isNew              = true; // Whether it is a new record, or an existing one
     this.isDirty            = false; // Whether the values have changed since the last save
+    this.errors             = {}; // Errors from the validation process
+    this.valid              = true; // Validation passed
 }
 
 ActiveRecord.prototype.validations = {};
+ActiveRecord.prototype.messages = {};
 
 /**
  * Initialization function
@@ -86,6 +89,8 @@ ActiveRecord.prototype.save = function () {
 
     this.isNew = false;
     this.isDirty = false;
+    this.errors = {};
+    this.valid = true;
 
     // we don't need an after save event. The developer can simple do: AR.save().done()
 
@@ -93,21 +98,31 @@ ActiveRecord.prototype.save = function () {
 }
 
 ActiveRecord.prototype.validate = function () {
-  var property, validation, i, vFun, results = {}, self = this;
+  var property, validation, i, vFun, results = {}, self = this, valid = true, valResult;
 
   for (property in this.validations) {
     results[property] = this.validations[property].map(function (validation) {
-      return self.checkValidation(property, validation);
+      valResult = self.checkValidation(property, validation);
+      valid = valid && valResult.valid;
+      return valResult;
     });
   }
 
-  console.log(results);
+  this.errors = results;
+  this.valid = valid;
 
-  return true;
+  return valid;
 }
 
+/**
+ * Check a property against a specific validation
+ *
+ * @param  {string} property   a property of the AR
+ * @param  {string} validation a validation function from the Validator
+ * @return {object}            an object containing the result or the validation and the message
+ */
 ActiveRecord.prototype.checkValidation = function (property, validation) {
-  var func, params = [], obj = {};
+  var func, params = [], obj = {}, message;
 
   if (typeof validation === "object") {
     func = validation.name;
@@ -120,7 +135,8 @@ ActiveRecord.prototype.checkValidation = function (property, validation) {
   if (typeof Validator.functions[func] === "function") {
     obj.valid = Validator.functions[func].apply(this, params.concat(this.values[property], validation.params));
     if (obj.valid === false) {
-      obj.message = Validator.messages[func].apply(this, params.concat(property, validation.params));
+      message = typeof this.messages[func] === "function" ? this.messages[func] : Validator.messages[func];
+      obj.message = message.apply(this, params.concat(property, validation.params));
     }
 
     return obj;
@@ -339,8 +355,6 @@ ActiveRecord.register = function (modelName, config) {
 
     return Model;
 };
-
-
 
 ////////////////////////////////////////// PRIVATE UTILITIES
 

@@ -6,10 +6,11 @@ Car.extend({
     cost : [{
       name : "more",
       params : [10000]
-    }, 'number']
+    }]
+  },
+  messages : {
+    required : function (property) {
+      return "Required message from model '"+property+"'";
+    }
   }
 });
-
-// var Animal = ActiveRecord.register("Animal",{}, {
-//     url : "/activerecord.js/data/animals.json"
-// });
