@@ -122,26 +122,26 @@ ActiveRecord.prototype.validate = function () {
  * @return {object}            an object containing the result or the validation and the message
  */
 ActiveRecord.prototype.checkValidation = function (property, validation) {
-  var func, params = [], obj = {}, message;
+  var validationName, params = [], obj = {}, message;
 
   if (typeof validation === "object") {
-    func = validation.name;
+    validationName = validation.test;
   } else if (typeof validation === "string") {
-    func = validation;
+    validationName = validation;
   } else {
-    throw "Unknown type of validation: '"+func+"'";
+    throw "Unknown type of validation: '"+validation+"'";
   }
 
-  if (typeof Validator.functions[func] === "function") {
-    obj.valid = Validator.functions[func].apply(this, params.concat(this.values[property], validation.params));
+  if (typeof Validator[validationName].test === "function") {
+    obj.valid = Validator[validationName].test.apply(this, params.concat(this.values[property], validation.params));
     if (obj.valid === false) {
-      message = typeof this.messages[func] === "function" ? this.messages[func] : Validator.messages[func];
-      obj.message = message.apply(this, params.concat(property, validation.params));
+      error = typeof this.messages[validationName] === "function" ? this.messages[validationName] : Validator[validationName].error;
+      obj.error = error.apply(this, params.concat(property, validation.params));
     }
 
     return obj;
   } else {
-    console.warn("No validation '"+func+"' defined");
+    console.warn("No validation '"+validationName+"' defined");
   }
 }
 

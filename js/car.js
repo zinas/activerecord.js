@@ -2,9 +2,9 @@ var Car = ActiveRecord.register("Car");
 
 Car.extend({
   validations : {
-    brand : ['required'],
+    brand : ['required', "integer", 'number'],
     cost : [{
-      name : "more",
+      test : "more",
       params : [10000]
     }]
   },
